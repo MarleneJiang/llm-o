@@ -5,9 +5,39 @@ interface envConfig {
   AZURE_OPENAI_ENDPOINT: string, MODEL_NAME: string, API_KEY: string, API_VERSION: string, HELICONE_API_KEY: string
 }
 
-export function reasoning(config: envConfig,question: string, sse: boolean = false) {
+const createAnswerBot = (ling: Ling, question: string, answers: string = '') => {
+  const bot3 = ling.createBot('answer', undefined, { response_format: { type: 'text' } });
+  bot3.addPrompt('请你根据我的问题和思考过程，给出最终答案。请深呼吸，一步一步慢慢来');
+  bot3.chat('我的提问：' + question + answers ? ('\n\n思考过程：' + answers) : '');
+  bot3.on('response', (content) => {
+    // 流数据推送完成
+    // console.log('bot3 response finished', content);
+  });
+}
+
+const createReasoningBot = (ling: Ling, question: string, answers: string = '', times: number = 0) => {
+  const bot = ling.createBot('reasoningList/' + times);
+  bot.addPrompt(`你是一个复杂问题处理大师，擅长把复杂问题分解成简单的问题，逐步分析和思考，并给出思路。现在请你分析我的问题，并根据之前的思考过程，给出当前的思考和下一步行动。请以json格式响应，确保 next_action 字段具有值 step 或 final_answer。
+example:
+{   "title": "Title of a step",   "briefContent": "Short description of the thought in this step",   "next_action": "step" }
+如果整个思考过程基本完成，可以将 next_action 指定为 final_answer。`+ (!!answers ? `我的提问：${question}` : ''));
+  !!answers && bot.addHistory([bot.botMessage(answers)])
+  bot.chat(!!answers ? '请根据上面的思考继续给出当前的思考，并告诉我是需要进一步思考还是直接让大模型给出答案。' : `我的提问：${question}`);
+  bot.on('inference-done', (content) => {
+    const reasoning = JSON.parse(content)
+    // console.log(`bot${times} inference-done`, reasoning);
+    const reasoningAnswers = answers + '\n\n' + reasoning.title + ':\n' + reasoning.briefContent
+    if (times <= 5 && reasoning?.next_action == 'step') {
+      createReasoningBot(ling, question, reasoningAnswers, times + 1)
+    } else {
+      createAnswerBot(ling, question, reasoningAnswers)
+    }
+  });
+}
+
+export function reasoning(config: envConfig, question: string, sse: boolean = false) {
   const { AZURE_OPENAI_ENDPOINT, MODEL_NAME, API_KEY, API_VERSION, HELICONE_API_KEY } = config;
-  
+
   const apiVersion = API_VERSION || "2024-08-01-preview";
   const client = new OpenAI({
     baseURL: "https://oai.helicone.ai/openai/deployments/" + MODEL_NAME,
@@ -24,39 +54,10 @@ export function reasoning(config: envConfig,question: string, sse: boolean = fal
   ling.setSSE(sse);
 
   // 工作流
-  const bot = ling.createBot();
-  bot.addPrompt('你用JSON格式回答我，以{开头\n[Example]\n{"answer": "我的回答"}');
-  bot.chat(question);
-  bot.on('string-response', ({uri, delta}) => {
-    console.log('bot string-response', uri, delta);
-
-    const bot2 = ling.createBot();
-    bot2.addPrompt('将我给你的内容扩写成更详细的内容，用JSON格式回答我，将解答内容的详细文字放在\'details\'字段里，将2-3条相关的其他知识点放在\'related_question\'字段里。\n[Example]\n{"details": "我的详细回答", "related_question": ["相关知识内容",...]}');
-    bot2.chat(delta);
-    bot2.on('response', (content) => {
-      // 流数据推送完成
-      console.log('bot2 response finished', content);
-    });
-
-    const bot3 = ling.createBot('test',undefined,{response_format:{ type: 'text' }});
-    bot3.addPrompt('将我给你的内容**用英文**扩写成更详细的内容');
-    bot3.chat(delta);
-    bot3.on('response', (content) => {
-      // 流数据推送完成
-      console.log('bot3 response finished', content);
-    });
-  });
-
-  // const bot3 = ling.createBot('test', undefined, { response_format: { type: 'text' } });
-  // bot3.addPrompt('将我给你的内容**用英文**扩写成更详细的内容');
-  // bot3.chat(question);
-  // bot3.on('response', (content) => {
-  //   // 流数据推送完成
-  //   console.log('bot3 response finished', content);
-  // });
+  createReasoningBot(ling, question)
 
   ling.on('message', (message) => {
-    console.log('ling message', message);
+    // console.log('ling message', message);
   });
 
   ling.close(); // 可以直接关闭，关闭时会检查所有bot的状态是否都完成了

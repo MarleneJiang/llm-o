@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig()
   const validateRes = validateConfig(config)
-  if(!validateRes.status){
+  if (!validateRes.status) {
     return { error: `missing ${validateRes.field} field.` }
   }
 

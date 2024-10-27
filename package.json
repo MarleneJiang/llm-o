@@ -10,17 +10,26 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/icon": "^1.5.8",
+    "@radix-icons/vue": "^1.0.0",
+    "@vueuse/core": "^11.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "jsonuri": "^3.4.5",
+    "lucide-vue-next": "^0.453.0",
     "nunjucks": "^3.2.4",
     "nuxt": "^3.13.2",
     "openai": "^4.68.4",
     "radix-vue": "^1.9.7",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7",
     "vue": "latest",
     "vue-router": "latest"
   },
   "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.2",
     "@types/nunjucks": "^3.2.6",
-    "@unocss/nuxt": "^0.63.6",
-    "unocss": "^0.63.6"
+    "shadcn-nuxt": "^0.10.4",
+    "typescript": "^5.6.3"
   }
 }

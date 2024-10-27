@@ -11,5 +11,23 @@ export default defineNuxtConfig({
     HELICONE_API_KEY: process.env.HELICONE_API_KEY
   },
 
-  modules: ['radix-vue/nuxt', '@unocss/nuxt']
+  modules: ['shadcn-nuxt', '@nuxtjs/tailwindcss', '@nuxt/icon'],
+  shadcn: {
+    /**
+     * Prefix for all the imported component
+     */
+    prefix: '',
+    /**
+     * Directory that the component lives in.
+     * @default "./components/ui"
+     */
+    componentDir: './components/ui'
+  },
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        baseUrl: '.'
+      }
+    }
+  }
 })

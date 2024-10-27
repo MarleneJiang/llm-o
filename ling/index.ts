@@ -20,7 +20,7 @@ export class Ling extends EventEmitter {
 
   constructor(private client: OpenAI, protected config?: ChatConfig, protected options: ChatOptions = {}) {
     super();
-    if(config && config.session_id) {
+    if (config && config.session_id) {
       this.session_id = config.session_id;
       delete config.session_id;
     }
@@ -40,7 +40,7 @@ export class Ling extends EventEmitter {
   }
 
   createBot(root: string | null = null, config: Partial<ChatConfig> = {}, options: Partial<ChatOptions> = {}) {
-    const bot = new ChatBot(this._tube, this.client, {...(this?.config || {}), ...config}, {...this.options, ...options});
+    const bot = new ChatBot(this._tube, this.client, { ...(this?.config || {}), ...config }, { ...this.options, ...options });
     bot.setJSONRoot(root);
     bot.setCustomParams(this.customParams);
     this.bots.push(bot);
@@ -52,7 +52,7 @@ export class Ling extends EventEmitter {
   }
 
   setCustomParams(params: Record<string, string>) {
-    this.customParams = {...params};
+    this.customParams = { ...params };
   }
 
   setSSE(sse: boolean) {
@@ -68,7 +68,7 @@ export class Ling extends EventEmitter {
       await sleep(100);
     }
     await sleep(500); // 再等0.5秒，确保没有新的 bot 创建，所有 bot 都真正结束
-    if(!this.isAllBotsFinished()) {
+    if (!this.isAllBotsFinished()) {
       this.close(); // 如果还有 bot 没有结束，则再关闭一次
       return;
     }

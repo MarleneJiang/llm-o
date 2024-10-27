@@ -1,20 +1,18 @@
 import { set, get } from 'jsonuri';
-export default function() {
-  const response = ref({
-    answer: 'Brief:',
-    details: 'Details:',
-    details_eng: 'Translation:',
-    related_question: [
-      '?',
-      '?',
-      '?'
-    ],
+export default function () {
+
+  const response = reactive({
+    errMessage: '',
+    reasoningList: [],
+    answer: ''
   } as any);
-  // const response = reactive({
-  //   errMessage: '',
-  //   jsonList: [],
-  // });
+  const done = ref(true);
+
   const chat = async (question: string) => {
+    done.value=false;
+    response.reasoningList = [];
+    response.answer = ''
+    response.errMessage = ''
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: {
@@ -24,29 +22,22 @@ export default function() {
         question
       }),
     });
-    if(!res.body){
+    if (!res.body) {
       return
     }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let done = false;
-    const data = {
-      answer: 'Brief:',
-      details: 'Details:',
-      related_question: [],
-    };
-    while (!done) {
+    while (!done.value) {
       const { value, done: doneReading } = await reader.read();
-      done = doneReading;
-      if (!done) {
+      done.value = doneReading;
+      if (!done.value) {
         const content = decoder.decode(value);
         const lines = content.trim().split('\n');
         for (const line of lines) {
           const input = JSON.parse(line);
           if (input.uri) {
-            const content = get(data, input.uri);
-            set(data, input.uri, (content || '') + input.delta);
-            response.value = { ...data };
+            const content = get(response, input.uri);
+            set(response, input.uri, (content || '') + input.delta);
           }
         }
       }
@@ -55,6 +46,7 @@ export default function() {
 
   return {
     response,
-    chat
+    chat,
+    done
   };
 }

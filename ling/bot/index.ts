@@ -31,7 +31,7 @@ export class ChatBot extends Bot {
   }
 
   setJSONRoot(root: string | null) {
-    if(!this.options.response_format) {
+    if (!this.options.response_format) {
       this.options.response_format = { type: 'json_object', root };
     } else {
       this.options.response_format.root = root;
@@ -39,7 +39,7 @@ export class ChatBot extends Bot {
   }
 
   setCustomParams(params: Record<string, string>) {
-    this.customParams = {...params};
+    this.customParams = { ...params };
   }
 
   addPrompt(promptTpl: string, promptData: Record<string, any> = {}) {
@@ -52,11 +52,11 @@ export class ChatBot extends Bot {
     this.addPrompt(promptTpl, promptData);
   }
 
-  addHistory(messages: ChatCompletionMessageParam []) {
+  addHistory(messages: ChatCompletionMessageParam[]) {
     this.history.push(...messages);
   }
 
-  setHistory(messages: ChatCompletionMessageParam []) {
+  setHistory(messages: ChatCompletionMessageParam[]) {
     this.history = messages;
   }
 
@@ -79,12 +79,9 @@ export class ChatBot extends Bot {
   async chat(message: string) {
     try {
       this.chatState = WorkState.WORKING;
-      const prompts = this.prompts.length > 0 ? [...this.prompts] : [{
-        role: 'system',
-        content: `[Output]\nOutput with json format, starts with '{'\n[Example]\n{"answer": "My answer"}`,
-      }];
+      const prompts = this.prompts.length > 0 ? [...this.prompts] : [];
       const messages = [...prompts, ...this.history, { role: "user", content: message }];
-      return await getChatCompletions(this.tube, messages, this.client, this.config, this.options, 
+      return await getChatCompletions(this.tube, messages, this.client, this.config, this.options,
         (content) => { // on complete
           this.chatState = WorkState.FINISHED;
           this.emit('response', content);
@@ -93,11 +90,11 @@ export class ChatBot extends Bot {
         }).then((content) => {
           this.emit('inference-done', content);
         });
-    } catch(ex: any) {
+    } catch (ex: any) {
       console.error(ex);
       this.chatState = WorkState.ERROR;
       // this.emit('error', ex.message);
-      this.tube.enqueue({event: 'error', data: ex.message});
+      this.tube.enqueue({ event: 'error', data: ex.message });
       // this.tube.cancel();
     }
   }
